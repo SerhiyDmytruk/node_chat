@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use strict';
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -8,6 +7,8 @@ const node_fs_1 = require("node:fs");
 const promises_1 = require("node:fs/promises");
 const node_http_1 = require("node:http");
 const node_path_1 = __importDefault(require("node:path"));
+const router_1 = require("./router");
+const utils_1 = require("./utils/utils");
 const PUBLIC_DIR = node_path_1.default.join(__dirname, 'public');
 const DEFAULT_FILE = 'index.html';
 const CONTENT_TYPES = {
@@ -17,24 +18,8 @@ const CONTENT_TYPES = {
     '.json': 'application/json; charset=utf-8',
     '.svg': 'image/svg+xml; charset=utf-8',
 };
-function setCorsHeaders(request, response) {
-    const allowedOrigin = process.env.FE_URL;
-    const requestOrigin = request.headers.origin;
-    if (allowedOrigin && requestOrigin === allowedOrigin) {
-        response.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-        response.setHeader('Access-Control-Allow-Credentials', 'true');
-        response.setHeader('Vary', 'Origin');
-    }
-}
-function sendJson(request, response, statusCode, payload) {
-    setCorsHeaders(request, response);
-    response.writeHead(statusCode, {
-        'Content-Type': 'application/json; charset=utf-8',
-    });
-    response.end(JSON.stringify(payload));
-}
 function sendNoContent(request, response) {
-    setCorsHeaders(request, response);
+    (0, utils_1.setCorsHeaders)(request, response);
     response.writeHead(204, {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
@@ -53,7 +38,7 @@ async function serveStaticFile(request, response, pathname) {
     const filePath = resolvePublicPath(pathname);
     const relativePath = node_path_1.default.relative(PUBLIC_DIR, filePath);
     if (relativePath.startsWith('..') || node_path_1.default.isAbsolute(relativePath)) {
-        sendJson(request, response, 403, { error: 'Forbidden' });
+        (0, utils_1.sendJson)(request, response, 403, { error: 'Forbidden' });
         return true;
     }
     try {
@@ -81,20 +66,19 @@ async function requestListener(request, response) {
         sendNoContent(request, response);
         return;
     }
-    if (method === 'GET' && pathname === '/health') {
-        sendJson(request, response, 200, {
-            message: 'Chat server is running',
-            status: 'ok',
-        });
-        return;
-    }
     if (method === 'GET') {
         const fileServed = await serveStaticFile(request, response, pathname);
         if (fileServed) {
             return;
         }
     }
-    sendJson(request, response, 404, { error: 'Not found' });
+    const routerResult = (0, router_1.router)(method, pathname, request, response).result;
+    if (routerResult) {
+        (0, router_1.router)(method, pathname, request, response);
+    }
+    else {
+        (0, utils_1.sendJson)(request, response, 404, { error: 'Not found' });
+    }
 }
 const app = (0, node_http_1.createServer)((request, response) => {
     void requestListener(request, response);
