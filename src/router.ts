@@ -30,6 +30,9 @@ export const router = (
     'GET /rooms': () => {
       // TODO
     },
+    'POST /rooms': () => {
+      // TODO
+    },
   };
 
   const routeKey = `${method} ${pathname}`;
