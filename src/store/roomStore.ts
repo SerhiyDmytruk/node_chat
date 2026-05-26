@@ -1,5 +1,18 @@
-const rooms = [];
-const generalRoom = {
+type Message = {
+  authour: string;
+  time: string;
+  text: string[];
+};
+
+type RoomInterface = {
+  id: string;
+  name: string;
+  messages: Message[];
+};
+
+let rooms: RoomInterface[] = [];
+
+const generalRoom: RoomInterface = {
   id: '1',
   name: 'General',
   messages: [
@@ -11,25 +24,29 @@ const generalRoom = {
   ],
 };
 
-roomStore.push(generalRoom);
+rooms.push(generalRoom);
 
 const getAllRoom = () => {
   return rooms;
 };
 
-const getRoomById = (roomId) => {
+const getRoomById = (roomId: string) => {
   return rooms.find((room) => room.id === roomId);
 };
 
-const createRoom = ({ roomName, roomAuthour }) => {
-  const newRoom = {
-    id: new Temporal.Now.instant().epochMilliseconds,
+const createRoom = (
+  roomName: string,
+  roomAuthour: string,
+  roomText: string,
+) => {
+  const newRoom: RoomInterface = {
+    id: new Date().toISOString(),
     name: roomName,
     messages: [
       {
         authour: roomAuthour,
-        time: new Temporal.PlainDateTime.prototype.add(),
-        text: [],
+        time: new Date().toISOString(),
+        text: [roomText],
       },
     ],
   };
@@ -37,27 +54,40 @@ const createRoom = ({ roomName, roomAuthour }) => {
   rooms.push(newRoom);
 };
 
-const addMessageToRoom = ({ roomId, roomAuthour, roomText }) => {
+const addMessageToRoom = (
+  roomId: string,
+  roomAuthour: string,
+  roomText: string,
+) => {
   const room = getRoomById(roomId);
-  const nowTemporal = new Temporal.PlainDateTime.prototype.add();
+  const nowDate = new Date().toISOString();
+
+  if (!room) {
+    return false;
+  }
 
   room.messages.push({
     authour: roomAuthour,
-    time: nowTemporal,
-    text: roomText,
+    time: nowDate,
+    text: [roomText],
   });
 };
 
-const updateRoom = (roomId, newRoomName) => {
+const updateRoom = (roomId: string, newRoomName: string) => {
   const room = getRoomById(roomId);
 
+  if (!room) {
+    return false;
+  }
   room.name = newRoomName;
 
   return room;
 };
 
-const deleteRoom = (roomId) => {
-  return rooms.filter((room) => room.id !== roomId);
+const deleteRoom = (roomId: string) => {
+  rooms = rooms.filter((room) => room.id !== roomId);
+
+  return rooms;
 };
 
 export const roomStore = {

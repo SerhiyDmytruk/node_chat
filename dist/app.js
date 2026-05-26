@@ -72,13 +72,11 @@ async function requestListener(request, response) {
             return;
         }
     }
-    const routerResult = (0, router_1.router)(method, pathname, request, response).result;
-    if (routerResult) {
-        (0, router_1.router)(method, pathname, request, response);
+    const handled = (0, router_1.router)(method, pathname, request, response);
+    if (handled) {
+        return;
     }
-    else {
-        (0, utils_1.sendJson)(request, response, 404, { error: 'Not found' });
-    }
+    (0, utils_1.sendJson)(request, response, 404, { error: 'Not found' });
 }
 const app = (0, node_http_1.createServer)((request, response) => {
     void requestListener(request, response);

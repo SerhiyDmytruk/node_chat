@@ -38,15 +38,11 @@ export const router = (
   const routeKey = `${method} ${pathname}`;
   const handler = objectRouter[routeKey];
 
-  if (handler) {
-    handler(request, response);
-
-    return {
-      result: true,
-    };
+  if (!handler) {
+    return false;
   }
 
-  return {
-    result: false,
-  };
+  handler(request, response);
+
+  return true;
 };
