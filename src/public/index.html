@@ -1,14 +1,37 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Node Chat</title>
   </head>
   <body>
     <main>
       <h1>Node Chat</h1>
-      <p>Pure Node.js server is running.</p>
+
+      <section>
+        <h2>Rooms</h2>
+
+        <form id="create-room-form">
+          <input
+            id="room-name-input"
+            name="roomName"
+            type="text"
+            placeholder="New room name"
+            required
+          />
+          <button type="submit">Create room</button>
+        </form>
+
+        <ul id="rooms-list" class="rooms-list"></ul>
+      </section>
+
+      <section>
+        <h2 id="active-room-title">Select a room</h2>
+        <ul id="messages-list"></ul>
+      </section>
     </main>
+
+    <script src="/app.js"></script>
   </body>
 </html>
