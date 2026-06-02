@@ -1,97 +1,129 @@
-type Message = {
-  authour: string;
+import { randomUUID } from 'node:crypto';
+
+export type Message = {
+  author: string;
   time: string;
-  text: string[];
+  text: string;
 };
 
-type RoomInterface = {
+export type Room = {
   id: string;
   name: string;
   messages: Message[];
 };
 
-let rooms: RoomInterface[] = [];
+const GENERAL_ROOM_ID = 'general';
 
-const generalRoom: RoomInterface = {
-  id: '1',
-  name: 'General',
-  messages: [
-    {
-      authour: 'Serg',
-      time: Date(),
-      text: ['Test'],
-    },
-  ],
-};
+const rooms: Room[] = [
+  {
+    id: GENERAL_ROOM_ID,
+    name: 'General',
+    messages: [],
+  },
+];
 
-rooms.push(generalRoom);
+const normalizeRoomName = (roomName: string) => roomName.trim().toLowerCase();
 
-const getAllRoom = () => {
-  return rooms;
+const getAllRooms = () => {
+  return rooms.map((room) => ({
+    ...room,
+    messages: [...room.messages],
+  }));
 };
 
 const getRoomById = (roomId: string) => {
-  return rooms.find((room) => room.id === roomId);
-};
-
-const createRoom = (
-  roomName: string,
-  roomAuthour: string,
-  roomText: string,
-) => {
-  const newRoom: RoomInterface = {
-    id: new Date().toISOString(),
-    name: roomName,
-    messages: [
-      {
-        authour: roomAuthour,
-        time: new Date().toISOString(),
-        text: [roomText],
-      },
-    ],
-  };
-
-  rooms.push(newRoom);
-};
-
-const addMessageToRoom = (
-  roomId: string,
-  roomAuthour: string,
-  roomText: string,
-) => {
-  const room = getRoomById(roomId);
-  const nowDate = new Date().toISOString();
+  const room = rooms.find((item) => item.id === roomId);
 
   if (!room) {
-    return false;
+    return null;
   }
 
-  room.messages.push({
-    authour: roomAuthour,
-    time: nowDate,
-    text: [roomText],
+  return {
+    ...room,
+    messages: [...room.messages],
+  };
+};
+
+const hasRoomWithName = (roomName: string, excludeRoomId?: string) => {
+  const normalizedRoomName = normalizeRoomName(roomName);
+
+  return rooms.some((room) => {
+    if (excludeRoomId && room.id === excludeRoomId) {
+      return false;
+    }
+
+    return normalizeRoomName(room.name) === normalizedRoomName;
   });
 };
 
-const updateRoom = (roomId: string, newRoomName: string) => {
-  const room = getRoomById(roomId);
+const createRoom = (roomName: string) => {
+  const newRoom: Room = {
+    id: randomUUID(),
+    name: roomName.trim(),
+    messages: [],
+  };
+
+  rooms.push(newRoom);
+
+  return {
+    ...newRoom,
+    messages: [],
+  };
+};
+
+const addMessageToRoom = (roomId: string, author: string, text: string) => {
+  const room = rooms.find((item) => item.id === roomId);
 
   if (!room) {
-    return false;
+    return null;
   }
-  room.name = newRoomName;
 
-  return room;
+  const message: Message = {
+    author,
+    time: new Date().toISOString(),
+    text,
+  };
+
+  room.messages.push(message);
+
+  return { ...message };
+};
+
+const updateRoom = (roomId: string, newRoomName: string) => {
+  const room = rooms.find((item) => item.id === roomId);
+
+  if (!room) {
+    return null;
+  }
+
+  room.name = newRoomName.trim();
+
+  return {
+    ...room,
+    messages: [...room.messages],
+  };
 };
 
 const deleteRoom = (roomId: string) => {
-  rooms = rooms.filter((room) => room.id !== roomId);
+  const roomIndex = rooms.findIndex((room) => room.id === roomId);
 
-  return rooms;
+  if (roomIndex === -1) {
+    return null;
+  }
+
+  const [deletedRoom] = rooms.splice(roomIndex, 1);
+
+  return {
+    ...deletedRoom,
+    messages: [...deletedRoom.messages],
+  };
 };
 
 export const roomStore = {
-  getAllRoom,
+  GENERAL_ROOM_ID,
+  getAllRooms,
+  getRoomById,
+  hasRoomWithName,
   createRoom,
   addMessageToRoom,
   updateRoom,

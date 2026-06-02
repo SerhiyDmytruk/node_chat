@@ -98,7 +98,7 @@ async function requestListener(
     }
   }
 
-  const handled = router(method, pathname, request, response);
+  const handled = await router(method, pathname, request, response);
 
   if (handled) {
     return;

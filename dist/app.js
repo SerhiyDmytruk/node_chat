@@ -72,7 +72,7 @@ async function requestListener(request, response) {
             return;
         }
     }
-    const handled = (0, router_1.router)(method, pathname, request, response);
+    const handled = await (0, router_1.router)(method, pathname, request, response);
     if (handled) {
         return;
     }
