@@ -22,6 +22,7 @@ vi.mock('../../src/store/roomStore.js', () => ({
 }));
 
 import {
+  addMessageToRoomHandler,
   createRoomHandler,
   deleteRoomHandler,
   getRoomByIdHandler,
@@ -148,6 +149,54 @@ describe('roomsHandlers', () => {
     expect(sendJson).toHaveBeenCalledWith(request, response, 200, {
       deletedRoom,
       fallbackRoomId: 'general',
+    });
+  });
+
+  it('adds a message to a room when the payload is valid', async () => {
+    const message = {
+      author: 'Serhii',
+      time: '2026-06-04T12:00:00.000Z',
+      text: 'Hello room',
+    };
+
+    vi.mocked(roomStore.getRoomById).mockReturnValue({
+      id: 'room-1',
+      name: 'Backend',
+      messages: [],
+    });
+    vi.mocked(readJsonBody).mockResolvedValue({
+      author: ' Serhii ',
+      text: ' Hello room ',
+    });
+    vi.mocked(roomStore.addMessageToRoom).mockReturnValue(message);
+
+    await addMessageToRoomHandler(request, response, 'room-1');
+
+    expect(roomStore.addMessageToRoom).toHaveBeenCalledWith(
+      'room-1',
+      'Serhii',
+      'Hello room',
+    );
+    expect(sendJson).toHaveBeenCalledWith(request, response, 201, {
+      message,
+    });
+  });
+
+  it('returns 400 when message payload is invalid', async () => {
+    vi.mocked(roomStore.getRoomById).mockReturnValue({
+      id: 'room-1',
+      name: 'Backend',
+      messages: [],
+    });
+    vi.mocked(readJsonBody).mockResolvedValue({
+      author: 'Serhii',
+      text: '   ',
+    });
+
+    await addMessageToRoomHandler(request, response, 'room-1');
+
+    expect(sendJson).toHaveBeenCalledWith(request, response, 400, {
+      error: 'Author and text are required',
     });
   });
 });

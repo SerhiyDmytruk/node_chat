@@ -7,31 +7,64 @@
   </head>
   <body>
     <main>
-      <h1>Node Chat</h1>
-
       <section>
-        <h2>Rooms</h2>
+        <div>
+          <h1>Node Chat</h1>
+          <h2>Rooms</h2>
 
-        <form id="create-room-form">
-          <input
-            id="room-name-input"
-            name="roomName"
-            type="text"
-            placeholder="New room name"
-            required
-          />
-          <button type="submit">Create room</button>
-        </form>
+          <form id="create-room-form">
+            <input
+              id="room-name-input"
+              name="roomName"
+              type="text"
+              placeholder="New room name"
+              required
+            />
+            <button type="submit">Create room</button>
+          </form>
 
-        <ul id="rooms-list" class="rooms-list"></ul>
-      </section>
+          <ul id="rooms-list" class="rooms-list"></ul>
+        </div>
 
-      <section>
-        <h2 id="active-room-title">Select a room</h2>
-        <ul id="messages-list"></ul>
+        <div>
+          <h2>Select a room</h2>
+          <h2 id="active-room-title"></h2>
+
+          <h2>Message form</h2>
+          <ul id="messages-list"></ul>
+
+          <form id="message-form">
+            <input
+              type="text"
+              name="room"
+              placeholder="Choose room"
+              readonly
+              required
+            />
+            <input
+              type="text"
+              name="author"
+              placeholder="Enter your name"
+              required
+            />
+            <input type="text" name="text" placeholder="Enter text" required />
+            <button type="submit">send</button>
+          </form>
+        </div>
       </section>
     </main>
 
     <script src="/app.js"></script>
+
+    <style>
+      main {
+        display: grid;
+      }
+
+      section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    </style>
   </body>
 </html>

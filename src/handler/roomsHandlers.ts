@@ -8,6 +8,11 @@ type RoomPayload = {
   name?: unknown;
 };
 
+type MessagePayload = {
+  author?: unknown;
+  text?: unknown;
+};
+
 function parseRoomName(payload: RoomPayload | null) {
   if (!payload || typeof payload.name !== 'string') {
     return null;
@@ -20,6 +25,25 @@ function parseRoomName(payload: RoomPayload | null) {
   }
 
   return roomName;
+}
+
+function parseMessagePayload(payload: MessagePayload | null) {
+  if (!payload) {
+    return null;
+  }
+
+  if (typeof payload.author !== 'string' || typeof payload.text !== 'string') {
+    return null;
+  }
+
+  const author = payload.author.trim();
+  const text = payload.text.trim();
+
+  if (!author || !text) {
+    return null;
+  }
+
+  return { author, text };
 }
 
 function sendInvalidBody(
@@ -149,4 +173,45 @@ export function deleteRoomHandler(
     deletedRoom,
     fallbackRoomId: roomStore.GENERAL_ROOM_ID,
   });
+}
+
+export async function addMessageToRoomHandler(
+  request: IncomingMessage,
+  response: ServerResponse,
+  roomId: string,
+) {
+  const currentRoom = roomStore.getRoomById(roomId);
+
+  if (!currentRoom) {
+    sendJson(request, response, 404, { error: 'Room not found' });
+
+    return;
+  }
+
+  try {
+    const payload = await readJsonBody<MessagePayload>(request);
+    const messagePayload = parseMessagePayload(payload);
+
+    if (!messagePayload) {
+      sendInvalidBody(request, response, 'Author and text are required');
+
+      return;
+    }
+
+    const message = roomStore.addMessageToRoom(
+      roomId,
+      messagePayload.author,
+      messagePayload.text,
+    );
+
+    if (!message) {
+      sendJson(request, response, 404, { error: 'Room not found' });
+
+      return;
+    }
+
+    sendJson(request, response, 201, { message });
+  } catch {
+    sendInvalidBody(request, response, 'Invalid JSON body');
+  }
 }
