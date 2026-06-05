@@ -93,6 +93,22 @@ const messageToRoomFetch = (roomId, author, text) => {
   });
 };
 
+const updateRoomNameFetch = (roomId, roomName) => {
+  return fetch(`/rooms/${roomId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: roomName }),
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Failed to change room name');
+    }
+
+    return response.json();
+  });
+};
+
 createRoomForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -119,11 +135,51 @@ function renderRooms(data) {
     roomsList.insertAdjacentHTML(
       'beforeend',
       `
-    <li class="rooms-list__item" id='${element.id}'>
-      <button data-room='${element.id}'>
-        ${element.name}
+    <li class="room-list__item" id='${element.id}' data-mode="view">
+      <div class="room-list__view">
+        <button
+          class="button button--ghost room-list__button"
+          data-room='${element.id}'
+          type="button"
+        >
+          ${element.name}
+        </button>
+        <button
+          class="button button--ghost"
+          data-edit='${element.id}'
+          type="button"
+        >
+          Edit
+        </button>
+      </div>
+
+      <form class="room-list__edit">
+        <input
+          class="form__input"
+          type="text"
+          name="roon"
+          value="${element.name}"
+          required
+          minlength="3"
+        />
+        <div class="room-list__actions">
+          <button
+            class="button button--primary"
+            data-save='${element.id}'
+            type="submit"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+
+      <button
+        class="button button--danger room-list__delete"
+        data-delete='${element.id}'
+        type="button"
+      >
+        Delete
       </button>
-      <button data-delete='${element.id}'>x</button>
     </li>
     `,
     );
@@ -166,8 +222,12 @@ function renderMessage(data) {
       messagesList.insertAdjacentHTML(
         'beforeend',
         `
-        <li class="messagesList-list__item">
-          ${element.author} - ${element.time} - ${element.text}
+        <li class="message-list__item">
+          <div class="message-list__meta">
+            <span class="message-list__author">${element.author}</span>
+            <span>${element.time}</span>
+          </div>
+          <p class="message-list__text">${element.text}</p>
         </li>
         `,
       );
@@ -192,6 +252,9 @@ init();
 roomsList.addEventListener('click', async (event) => {
   const roomId = event.target.dataset.room;
   const deleteRoom = event.target.dataset.delete;
+  const editRoom = event.target.dataset.edit;
+  const saveRoom = event.target.dataset.save;
+  const liEl = event.target.parentElement.parentElement;
 
   if (roomId) {
     const roomMessage = await getRoomByIdFetch(roomId);
@@ -220,5 +283,24 @@ roomsList.addEventListener('click', async (event) => {
     activeRoomTitle.innerText = fallbackRoom.room.name;
     messageFormRoomName.value = fallbackRoom.room.name;
     renderMessage(fallbackRoom.room.messages);
+  }
+
+  if (editRoom) {
+    if (liEl.dataset.mode === 'view') {
+      liEl.dataset.mode = 'edit';
+    } else {
+      liEl.dataset.mode = 'view';
+    }
+  }
+
+  if (saveRoom) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target.parentElement.parentElement);
+    const roomNewName = formData.get('roon');
+
+    await updateRoomNameFetch(saveRoom, roomNewName);
+    await loadRooms();
+    renderRooms(state.rooms);
   }
 });
