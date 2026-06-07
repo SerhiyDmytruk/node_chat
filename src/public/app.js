@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-undef */
 const roomsList = document.querySelector('#rooms-list');
 const messagesList = document.querySelector('#messages-list');
 const activeRoomTitle = document.querySelector('#active-room-title');
@@ -16,6 +17,39 @@ const state = {
   rooms: [],
   activeRoomId: null,
 };
+
+const addMessageToDom = (message) => {
+  messagesList.insertAdjacentHTML(
+    'beforeend',
+    `
+    <li class="message-list__item">
+      <div class="message-list__meta">
+        <span class="message-list__author">${message.author}</span>
+        <span>${message.time}</span>
+      </div>
+      <p class="message-list__text">${message.text}</p>
+    </li>
+    `,
+  );
+};
+
+const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const socket = new WebSocket(`${socketProtocol}//${window.location.host}`);
+
+socket.addEventListener('message', (event) => {
+  try {
+    const payload = JSON.parse(event.data);
+
+    if (
+      payload.type === 'message_created' &&
+      payload.roomId === state.activeRoomId
+    ) {
+      addMessageToDom(payload.message);
+    }
+  } catch {
+    console.log(`Invalid websocket payload: ${event.data}`);
+  }
+});
 
 const createRoomFetch = (roomName) => {
   return fetch('/rooms', {
@@ -74,22 +108,6 @@ const deleteRoomFetch = (roomId) => {
   }).then((response) => {
     if (!response.ok) {
       throw new Error('Failed to delete rooms');
-    }
-
-    return response.json();
-  });
-};
-
-const messageToRoomFetch = (roomId, author, text) => {
-  return fetch(`/rooms/${roomId}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ author, text }),
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error('Failed to add message to room');
     }
 
     return response.json();
@@ -217,15 +235,19 @@ messageForm.addEventListener('submit', async (event) => {
     author.trim() !== '' &&
     text.trim() !== ''
   ) {
-    await messageToRoomFetch(state.activeRoomId, author.trim(), text.trim());
-
-    const roomData = await getRoomByIdFetch(state.activeRoomId);
+    socket.send(
+      JSON.stringify({
+        type: 'send_message',
+        roomId: state.activeRoomId,
+        author: author.trim(),
+        text: text.trim(),
+      }),
+    );
 
     authorMemory(author);
-
-    renderMessage(roomData.room.messages);
     event.currentTarget.reset();
     messageFormRoomName.value = activeRoomTitle.innerText;
+    messageFormAuthorName.value = authorMemory();
   }
 });
 
@@ -237,18 +259,7 @@ function renderMessage(data) {
 
   if (data.length) {
     data.forEach((element) => {
-      messagesList.insertAdjacentHTML(
-        'beforeend',
-        `
-        <li class="message-list__item">
-          <div class="message-list__meta">
-            <span class="message-list__author">${element.author}</span>
-            <span>${element.time}</span>
-          </div>
-          <p class="message-list__text">${element.text}</p>
-        </li>
-        `,
-      );
+      addMessageToDom(element);
     });
   }
 }
@@ -280,6 +291,13 @@ roomsList.addEventListener('click', async (event) => {
     const roomName = roomMessage.room.name;
 
     state.activeRoomId = roomId;
+
+    socket.send(
+      JSON.stringify({
+        type: 'join_room',
+        roomId,
+      }),
+    );
 
     activeRoomTitle.innerText = roomName;
     messageFormRoomName.value = roomName;
