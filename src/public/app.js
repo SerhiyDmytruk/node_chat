@@ -8,6 +8,9 @@ const messageForm = document.querySelector('#message-form');
 const messageFormRoomName = document.querySelector(
   '#message-form input[name="room"]',
 );
+const messageFormAuthorName = document.querySelector(
+  '#message-form input[name="author"]',
+);
 
 const state = {
   rooms: [],
@@ -186,6 +189,19 @@ function renderRooms(data) {
   });
 }
 
+function authorMemory(author) {
+  const storage = window.localStorage;
+
+  if (author) {
+    storage.removeItem('author');
+    storage.setItem('author', author);
+  }
+
+  if (storage.getItem('author')) {
+    return storage.getItem('author');
+  }
+}
+
 messageForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -204,6 +220,8 @@ messageForm.addEventListener('submit', async (event) => {
     await messageToRoomFetch(state.activeRoomId, author.trim(), text.trim());
 
     const roomData = await getRoomByIdFetch(state.activeRoomId);
+
+    authorMemory(author);
 
     renderMessage(roomData.room.messages);
     event.currentTarget.reset();
@@ -245,6 +263,7 @@ async function init() {
   await loadRooms();
 
   renderRooms(state.rooms);
+  messageFormAuthorName.value = authorMemory();
 }
 
 init();
